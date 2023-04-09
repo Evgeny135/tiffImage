@@ -35,7 +35,6 @@ struct IFD {
 };
 
 struct Image {
-	char startImage[4];
 	unsigned int offsetIfd;
 	unsigned int countIfd;
 	unsigned int width;
@@ -52,14 +51,14 @@ struct RGB {
 };
 
 vector<IFD> ifdArray;
-Image image;
+//Image image;
 
 class Matrix {
 
 private:
 	int width,height;
 	vector<vector<RGB>> imageMatrix;
-
+	Image image;
 public:
 
 	Matrix(unsigned int width, unsigned int height) {
@@ -69,23 +68,58 @@ public:
 
 	Matrix(){}
 
+	Matrix cropImage(int width, int height) {
+		if (width>this->image.width)
+		{
+			width = this->image.width;
+		}
+		if (height>this->image.height)
+		{
+			height = this->image.height;
+		}
+		Matrix cropMatrix(width,height);
+		
+
+		cropMatrix.image = this->image;
+
+		cropMatrix.image.width = width;
+		cropMatrix.image.height = height;
+
+		cropMatrix.image.offsetIfd = cropMatrix.image.width * cropMatrix.image.height * 3+8;
+		cropMatrix.image.dataImageCount = cropMatrix.image.width * cropMatrix.image.height * 3 ;
+
+		for (int i = 0; i <height; i++)
+		{
+			vector<RGB> row;
+			for (int j = 0; j < width; j++)
+			{
+				row.push_back(this->imageMatrix[i][j]);
+			}
+			cropMatrix.imageMatrix.push_back(row);
+		}
+
+		return cropMatrix;
+
+	}
+
 	Matrix readTiff(const char* filePath) {
 
 		ifstream in(filePath, ios::binary);
 		char buffer[4];
 
+		in.seekg(4);
 
-		in.read(image.startImage, 4);
+		Matrix matrix;
 
 		in.read(buffer, 4);
-		image.offsetIfd = getBit(buffer);
+		matrix.image.offsetIfd = getBit(buffer);
 
-		in.seekg(image.offsetIfd);
+		in.seekg(matrix.image.offsetIfd);
 		in.read(buffer, 2);
 
-		image.countIfd = getBit(buffer, 2);
+		matrix.image.countIfd = getBit(buffer, 2);
 
-		for (int i = 0; i < image.countIfd; i++)
+		for (int i = 0; i < matrix.image.countIfd; i++)
 		{
 			IFD ifd;
 
@@ -105,10 +139,10 @@ public:
 
 			if (ifd.tagId == 256)
 			{
-				image.width = ifd.value;
+				matrix.image.width = ifd.value;
 			}
 			if (ifd.tagId == 257) {
-				image.height = ifd.value;
+				matrix.image.height = ifd.value;
 			}
 			if (ifd.tagId == 258)
 			{
@@ -116,10 +150,10 @@ public:
 			}
 			if (ifd.tagId == 279)
 			{
-				image.dataImageCount = ifd.value;
+				matrix.image.dataImageCount = ifd.value;
 			}
 			if (ifd.tagId == 273) {
-				image.offsetImage = ifd.value;
+				matrix.image.offsetImage = ifd.value;
 			}
 			/*if (ifd.tagId == 256 ||ifd.tagId == 257 || ifd.tagId == 258 || ifd.tagId == 259
 				|| ifd.tagId == 262 || ifd.tagId == 273 || ifd.tagId == 277 || ifd.tagId == 279) {*/
@@ -129,16 +163,19 @@ public:
 			//image.ifdArray[i].toString();
 		}
 
-		int offsetBitPerSamples = 8 + image.dataImageCount + 9 * 12;
-		image.offsetBitPerSamples = offsetBitPerSamples;
+		int offsetBitPerSamples = 8 + matrix.image.dataImageCount + 9 * 12;
+		matrix.image.offsetBitPerSamples = offsetBitPerSamples;
 
-		Matrix matrix(image.width, image.height);
+		//Matrix matrix(image.width, image.height);
 
-		char* imageData = new char[image.dataImageCount];
+		matrix.width = matrix.image.width;
+		matrix.height = matrix.image.height;
 
-		in.seekg(image.offsetImage);
-		in.read(imageData, image.dataImageCount);
-		getBit(imageData, image.dataImageCount);
+		char* imageData = new char[matrix.image.dataImageCount];
+
+		in.seekg(matrix.image.offsetImage);
+		in.read(imageData, matrix.image.dataImageCount);
+		getBit(imageData, matrix.image.dataImageCount);
 
 		matrix.setPixel(imageData);
 
@@ -150,24 +187,24 @@ public:
 	void writeTiff(Matrix& matrix,const char* filePath) {
 		ofstream out(filePath, ios::binary);
 		char buffer[4];
-		char* imageData = new char[image.dataImageCount];
+		char* imageData = new char[matrix.image.dataImageCount];
 
 		parseBit(buffer, 2771273);
 		out.write(buffer,4);
 		
-		parseBit(buffer, image.offsetIfd);
+		parseBit(buffer, matrix.image.offsetIfd);
 		out.write(buffer,4);
 		
 		matrix.getImageMatrix(imageData);
 
-		out.seekp(image.offsetImage);
-		parseBit(imageData, image.dataImageCount);
+		out.seekp(matrix.image.offsetImage);
+		parseBit(imageData, matrix.image.dataImageCount);
 
-		out.write(imageData, image.dataImageCount);
+		out.write(imageData, matrix.image.dataImageCount);
 
 		parseBit(buffer, 9);
 		out.write(buffer, 2);
-		for (int i = 0; i < image.countIfd; i++)
+		for (int i = 0; i < matrix.image.countIfd; i++)
 		{
 			if (ifdArray[i].tagId == 256 || ifdArray[i].tagId == 257 || ifdArray[i].tagId == 258 || ifdArray[i].tagId == 259
 				|| ifdArray[i].tagId == 262 || ifdArray[i].tagId == 273 || ifdArray[i].tagId == 277 || ifdArray[i].tagId == 279)
@@ -180,7 +217,16 @@ public:
 				out.write(buffer, 4);
 				if (ifdArray[i].tagId == 258)
 				{
-					parseBit(buffer, image.offsetBitPerSamples);
+					parseBit(buffer, matrix.image.offsetBitPerSamples);
+					out.write(buffer, 4);
+				}
+				else if(ifdArray[i].tagId==256) {
+					parseBit(buffer,matrix.image.width);
+					out.write(buffer, 4);
+				}
+				else if (ifdArray[i].tagId==257)
+				{
+					parseBit(buffer, matrix.image.height);
 					out.write(buffer, 4);
 				}
 				else {
@@ -191,7 +237,7 @@ public:
 
 		}
 
-		out.seekp(image.offsetBitPerSamples);
+		out.seekp(matrix.image.offsetBitPerSamples);
 		parseBit(buffer, 8);
 		out.write(buffer, 2);
 		parseBit(buffer, 8);
