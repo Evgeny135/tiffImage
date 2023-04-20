@@ -52,7 +52,6 @@ Matrix cropImage(struct Image &image, int width, int height, Matrix &matrix) {
     }
     Matrix cropMatrix(width, height);
 
-
     image.width = width;
     image.height = height;
 
@@ -132,7 +131,7 @@ Matrix readTiff(const char *filePath, Image &image, vector<IFD> &ifdArray) {
         ifdArray.push_back(ifd);
     }
 
-    int offsetBitPerSamples = 8 + image.dataImageCount + 9 * 12;
+    int offsetBitPerSamples = (8 + image.dataImageCount + 9 * 12)+12;
     image.offsetBitPerSamples = offsetBitPerSamples;
 
     matrix.setWidth(image.width);
@@ -163,12 +162,9 @@ void writeTiff(Matrix &matrix, const char *filePath, struct Image image, vector<
 
     matrix.getImageDataFromMatrix(imageData);
 
-//    out.seekp(image.offsetImage);
-//    parseBit(imageData, image.dataImageCount);
-
     out.write(imageData, image.dataImageCount);
 
-    parseBit(buffer, 9);
+    parseBit(buffer, 8);
     out.write(buffer, 2);
     for (int i = 0; i < image.countIfd; i++) {
         if (ifdArray[i].tagId == 256 || ifdArray[i].tagId == 257 || ifdArray[i].tagId == 258 || ifdArray[i].tagId == 259
