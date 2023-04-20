@@ -131,8 +131,8 @@ Matrix readTiff(const char *filePath, Image &image, vector<IFD> &ifdArray) {
         ifdArray.push_back(ifd);
     }
 
-    int offsetBitPerSamples = (8 + image.dataImageCount + 9 * 12)+12;
-    image.offsetBitPerSamples = offsetBitPerSamples;
+    image.offsetBitPerSamples = (8 + image.dataImageCount + 9 * 12)+12;
+    image.offsetIfd = image.height*image.width*3+8;
 
     matrix.setWidth(image.width);
     matrix.setHeight(image.height);
