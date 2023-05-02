@@ -21,11 +21,11 @@ void parseBit(char *buffer, unsigned int number) {
 }
 
 struct IFD {
-    unsigned int tagId;
-    unsigned int typeTag;
-    unsigned int length;
-    unsigned int offset;
-    unsigned int value;
+    unsigned int tagId = 256;
+    unsigned int typeTag = 1;
+    unsigned int length = 1;
+    unsigned int offset = 1;
+    unsigned int value = 1;
 
     /*void toString() {
         cout << "tagId: " << this->tagId << " typeId: " << this->typeTag << " length: " << this->length << " offset: " << this->offset << " value: " << this->value << endl;
@@ -33,13 +33,13 @@ struct IFD {
 };
 
 struct Image {
-    unsigned int offsetIfd;
-    unsigned int countIfd;
-    unsigned int width;
-    unsigned int height;
-    unsigned int offsetImage;
-    unsigned int dataImageCount;
-    unsigned int offsetBitPerSamples;
+    unsigned int offsetIfd = 1;
+    unsigned int countIfd = 8;
+    unsigned int width = 1;
+    unsigned int height = 1;
+    unsigned int offsetImage = 8;
+    unsigned int dataImageCount = 1;
+    unsigned int offsetBitPerSamples = 1;
 };
 
 Matrix cropImage(struct Image &image, int width, int height, Matrix &matrix) {
@@ -58,12 +58,13 @@ Matrix cropImage(struct Image &image, int width, int height, Matrix &matrix) {
     image.offsetIfd = image.width * image.height * 3 + 8;
     image.dataImageCount = image.width * image.height * 3;
 
+    cropMatrix.setSize(image.width * image.height);
+
     for (int i = 0; i < height; i++) {
-        vector<RGB> row;
         for (int j = 0; j < width; j++) {
-            row.push_back(matrix.getImageMatrix()[i][j]);
+            cropMatrix.set(i, j, matrix.get(i, j));
         }
-        cropMatrix.addRowImageMatrix(row);
+        //cropMatrix.addRowImageMatrix(row);
     }
     return cropMatrix;
 }
@@ -112,27 +113,27 @@ Matrix readTiff(const char *filePath, Image &image, vector<IFD> &ifdArray) {
             ifd.value = 8;
         }
         if (ifd.tagId == 279) {
-            image.dataImageCount = image.width*image.height*3;
+            image.dataImageCount = image.width * image.height * 3;
             ifd.value = image.dataImageCount;
         }
         if (ifd.tagId == 273) {
             image.offsetImage = 8;
             ifd.value = image.offsetImage;
             ifd.offset = image.offsetImage;
-            ifd.length=1;
+            ifd.length = 1;
         }
-        if (ifd.tagId==278){
-            ifd.value= image.height;
+        if (ifd.tagId == 278) {
+            ifd.value = image.height;
         }
-        if (ifd.tagId==279){
+        if (ifd.tagId == 279) {
             ifd.value = image.dataImageCount;
-            ifd.length =1;
+            ifd.length = 1;
         }
         ifdArray.push_back(ifd);
     }
 
-    image.offsetBitPerSamples = (8 + image.dataImageCount + 9 * 12)+12;
-    image.offsetIfd = image.height*image.width*3+8;
+    image.offsetBitPerSamples = (8 + image.dataImageCount + 9 * 12) + 12;
+    image.offsetIfd = image.height * image.width * 3 + 8;
 
     matrix.setWidth(image.width);
     matrix.setHeight(image.height);
@@ -202,6 +203,27 @@ void writeTiff(Matrix &matrix, const char *filePath, struct Image image, vector<
     out.write(buffer, 2);
 }
 
+Matrix convertToGrayScale(Matrix &matrix) {
+    Matrix greyMatrix;
+
+    greyMatrix.setWidth(matrix.getWidth());
+    greyMatrix.setHeight(matrix.getHeight());
+
+    greyMatrix.setSize(greyMatrix.getWidth() * greyMatrix.getHeight());
+
+    for (int i = 0; i < greyMatrix.getHeight(); i++) {
+        for (int j = 0; j < greyMatrix.getWidth(); j++) {
+            RGB rgb = matrix.get(i, j);
+            int grey = rgb.r * 0.299 + 0.587 * rgb.g + 0.114 * rgb.b;
+            rgb.r = grey;
+            rgb.g = grey;
+            rgb.b = grey;
+            greyMatrix.set(i, j, rgb);
+        }
+    }
+    return greyMatrix;
+}
+
 int main(int argc, char *argv[]) {
     setlocale(LC_ALL, "ru");
 
@@ -210,17 +232,40 @@ int main(int argc, char *argv[]) {
 
     Matrix matrix = readTiff(argv[1], image, ifdArray);
 
+    //matrix.convertToGreyScale();
     if (argc == 3) {
         writeTiff(matrix, argv[2], image, ifdArray);
-    } else if (argv[3] == string("-crop")) {
-        try {
-            stoi(argv[4]);
-            stoi(argv[5]);
-        } catch (...) {
-            cout << "Введено неверное число";
-            exit;
+    } else if (argc == 4) {
+        if (argv[3] == string("-gs")) {
+            Matrix greyMatrix = convertToGrayScale(matrix);
+            writeTiff(greyMatrix, argv[2], image, ifdArray);
         }
-        Matrix cropMatrix = cropImage(image,stoi(argv[4]), stoi(argv[5]),matrix);
-        writeTiff(cropMatrix,argv[2],image,ifdArray);
+    } else if (argc == 6) {
+        if (argv[3] == string("-crop")) {
+            try {
+                stoi(argv[4]);
+                stoi(argv[5]);
+            } catch (...) {
+                cout << "Введено неверное число";
+                exit(1);
+            }
+            Matrix cropMatrix = cropImage(image, stoi(argv[4]), stoi(argv[5]), matrix);
+            writeTiff(cropMatrix, argv[2], image, ifdArray);
+        }
+    } else if (argc == 7) {
+        if (argv[3] == string("-crop")) {
+            if (argv[6] == string("-gs")) {
+                try {
+                    stoi(argv[4]);
+                    stoi(argv[5]);
+                } catch (...) {
+                    cout << "Введено неверное число";
+                    exit(1);
+                }
+                Matrix cropMatrix = cropImage(image, stoi(argv[4]), stoi(argv[5]), matrix);
+                Matrix greyMatrix = convertToGrayScale(cropMatrix);
+                writeTiff(greyMatrix, argv[2], image, ifdArray);
+            }
+        }
     }
 }

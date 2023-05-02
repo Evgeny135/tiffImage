@@ -1,8 +1,6 @@
 #pragma once
 #include <vector>
 #include <iostream>
-using namespace std;
-
 
 struct RGB {
 	uint8_t r;
@@ -14,44 +12,43 @@ class Matrix {
 
 private:
 	int width =0,height=0;
-	vector<vector<RGB>> imageMatrix;
-//	Image image;
+	std::vector<RGB> imageMatrix;
 public:
 
+    void setSize (const int n){
+        imageMatrix.resize(n);
+}
 
-    void addRowImageMatrix(vector<RGB> &imageMatrix){
-        Matrix::imageMatrix.push_back(imageMatrix);
+    void set(unsigned int row,unsigned int column, const RGB& v)
+    {
+        imageMatrix[row*width+column] = v;
     }
+
+    const RGB& get(unsigned int row,unsigned int column) const{
+        return imageMatrix[row*width+column];
+}
 
 	void setPixel(const char* mass) {
 		int k = -1;
-		for (int i = 0; i < this->height; i++)
-		{
-			vector<RGB> row;
-			for (int j = 0; j < this->width; j++)
+        int size = this->width* this->height;
+        for (int i = 0; i< size; i++)
 			{
 				RGB rgb;
 				rgb.r = mass[++k];
 				rgb.g = mass[++k];
 				rgb.b = mass[++k];
-				row.push_back(rgb);
+				imageMatrix.push_back(rgb);
 			}
-			imageMatrix.push_back(row);
-		}
 	}
 
 	void getImageDataFromMatrix(char* imageData){
 		int k = -1;
-		for (int i = 0; i < height; i++)
+		for (int i = 0; i < height*width; i++)
 		{
-			for (int j = 0; j < width; j++)
-			{
-				imageData[++k] = imageMatrix[i][j].r;
-				imageData[++k] = imageMatrix[i][j].g;
-				imageData[++k] = imageMatrix[i][j].b;
-			}
+				imageData[++k] = imageMatrix[i].r;
+				imageData[++k] = imageMatrix[i].g;
+				imageData[++k] = imageMatrix[i].b;
 		}
-
 	}
 
 	Matrix(unsigned int width, unsigned int height) {
@@ -77,7 +74,7 @@ public:
         Matrix::height = height;
     }
 
-    const vector<vector<RGB>> &getImageMatrix() const {
+    const std::vector<RGB> &getImageMatrix() const {
         return imageMatrix;
     }
 };
