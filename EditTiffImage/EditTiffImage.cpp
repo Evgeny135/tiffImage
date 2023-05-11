@@ -2,6 +2,7 @@
 #include <fstream>
 #include "Matrix.h"
 #include <string>
+#include "cmath"
 
 using namespace std;
 
@@ -58,7 +59,7 @@ Matrix cropImage(struct Image &image, int width, int height, Matrix &matrix) {
     image.offsetIfd = image.width * image.height * 3 + 8;
     image.dataImageCount = image.width * image.height * 3;
 
-    cropMatrix.setSize(image.width * image.height);
+    //cropMatrix.setSize(image.width * image.height);
 
     for (int i = 0; i < height; i++) {
         for (int j = 0; j < width; j++) {
@@ -204,12 +205,9 @@ void writeTiff(Matrix &matrix, const char *filePath, struct Image image, vector<
 }
 
 Matrix convertToGrayScale(Matrix &matrix) {
-    Matrix greyMatrix;
+    Matrix greyMatrix(matrix.getWidth(),matrix.getHeight());
 
-    greyMatrix.setWidth(matrix.getWidth());
-    greyMatrix.setHeight(matrix.getHeight());
-
-    greyMatrix.setSize(greyMatrix.getWidth() * greyMatrix.getHeight());
+    //greyMatrix.setSize(greyMatrix.getWidth() * greyMatrix.getHeight());
 
     for (int i = 0; i < greyMatrix.getHeight(); i++) {
         for (int j = 0; j < greyMatrix.getWidth(); j++) {
@@ -224,6 +222,48 @@ Matrix convertToGrayScale(Matrix &matrix) {
     return greyMatrix;
 }
 
+Matrix rotateImage(Matrix &matrix, int angle){
+    Matrix matrix1(matrix.getWidth(),matrix.getHeight());
+    double rad = angle * M_PI / 180; // перевод угла из градусов в радианы
+    int new_i, new_j; // новые индексы элемента матрицы
+    double cosA = cos(rad);
+    double sinA = sin(rad);
+
+    //matrix1.setSize(512*512);
+
+    for (int i = 0; i < matrix.getHeight(); ++i) {
+        for (int j = 0; j < matrix.getWidth(); ++j) {
+            RGB rgb;
+            rgb.r = 0;
+            rgb.g =0;
+            rgb.b = 0;
+
+            matrix1.set(i,j,rgb);
+        }
+    }
+
+    int center_x = matrix.getWidth()/2-1;
+    int center_y = matrix.getHeight()/2-1;
+    // Перебираем элементы матрицы
+    for (int i = 0; i < matrix.getHeight(); i++) {
+        for (int j = 0; j < matrix.getWidth(); j++) {
+            // Вычисляем новые индексы элемента матрицы при повороте вокруг центра
+            new_i = (i - center_x) * cosA - (j - center_y) * sinA + center_x;
+            new_j = (i - center_x) * sinA + (j - center_y) * cosA + center_y;
+
+            // Если новые индексы выходят за границы матрицы, пропускаем элемент
+            if (new_i < 0 || new_i >= matrix.getWidth() || new_j < 0 || new_j >= matrix.getHeight()) {
+                continue;
+            }
+
+            matrix1.set(new_i,new_j,matrix.get(i,j));
+        }
+    }
+
+    return matrix1;
+
+}
+
 int main(int argc, char *argv[]) {
     setlocale(LC_ALL, "ru");
 
@@ -232,40 +272,44 @@ int main(int argc, char *argv[]) {
 
     Matrix matrix = readTiff(argv[1], image, ifdArray);
 
+    Matrix matrix1 = rotateImage(matrix,45);
+
+    writeTiff(matrix1,argv[2],image,ifdArray);
+
     //matrix.convertToGreyScale();
-    if (argc == 3) {
-        writeTiff(matrix, argv[2], image, ifdArray);
-    } else if (argc == 4) {
-        if (argv[3] == string("-gs")) {
-            Matrix greyMatrix = convertToGrayScale(matrix);
-            writeTiff(greyMatrix, argv[2], image, ifdArray);
-        }
-    } else if (argc == 6) {
-        if (argv[3] == string("-crop")) {
-            try {
-                stoi(argv[4]);
-                stoi(argv[5]);
-            } catch (...) {
-                cout << "Введено неверное число";
-                exit(1);
-            }
-            Matrix cropMatrix = cropImage(image, stoi(argv[4]), stoi(argv[5]), matrix);
-            writeTiff(cropMatrix, argv[2], image, ifdArray);
-        }
-    } else if (argc == 7) {
-        if (argv[3] == string("-crop")) {
-            if (argv[6] == string("-gs")) {
-                try {
-                    stoi(argv[4]);
-                    stoi(argv[5]);
-                } catch (...) {
-                    cout << "Введено неверное число";
-                    exit(1);
-                }
-                Matrix cropMatrix = cropImage(image, stoi(argv[4]), stoi(argv[5]), matrix);
-                Matrix greyMatrix = convertToGrayScale(cropMatrix);
-                writeTiff(greyMatrix, argv[2], image, ifdArray);
-            }
-        }
-    }
+//    if (argc == 3) {
+//        writeTiff(matrix, argv[2], image, ifdArray);
+//    } else if (argc == 4) {
+//        if (argv[3] == string("-gs")) {
+//            Matrix greyMatrix = convertToGrayScale(matrix);
+//            writeTiff(greyMatrix, argv[2], image, ifdArray);
+//        }
+//    } else if (argc == 6) {
+//        if (argv[3] == string("-crop")) {
+//            try {
+//                stoi(argv[4]);
+//                stoi(argv[5]);
+//            } catch (...) {
+//                cout << "Введено неверное число";
+//                exit(1);
+//            }
+//            Matrix cropMatrix = cropImage(image, stoi(argv[4]), stoi(argv[5]), matrix);
+//            writeTiff(cropMatrix, argv[2], image, ifdArray);
+//        }
+//    } else if (argc == 7) {
+//        if (argv[3] == string("-crop")) {
+//            if (argv[6] == string("-gs")) {
+//                try {
+//                    stoi(argv[4]);
+//                    stoi(argv[5]);
+//                } catch (...) {
+//                    cout << "Введено неверное число";
+//                    exit(1);
+//                }
+//                Matrix cropMatrix = cropImage(image, stoi(argv[4]), stoi(argv[5]), matrix);
+//                Matrix greyMatrix = convertToGrayScale(cropMatrix);
+//                writeTiff(greyMatrix, argv[2], image, ifdArray);
+//            }
+//        }
+//    }
 }

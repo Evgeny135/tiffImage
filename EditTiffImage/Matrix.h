@@ -14,11 +14,6 @@ private:
 	int width =0,height=0;
 	std::vector<RGB> imageMatrix;
 public:
-
-    void setSize (const int n){
-        imageMatrix.resize(n);
-}
-
     void set(unsigned int row,unsigned int column, const RGB& v)
     {
         imageMatrix[row*width+column] = v;
@@ -54,6 +49,7 @@ public:
 	Matrix(unsigned int width, unsigned int height) {
 		this->width = width;
 		this->height = height;
+        imageMatrix.resize(width*height);
 	}
 
 	Matrix(){}
