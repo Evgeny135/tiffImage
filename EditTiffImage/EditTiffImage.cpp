@@ -205,7 +205,7 @@ void writeTiff(Matrix &matrix, const char *filePath, struct Image image, vector<
 }
 
 Matrix convertToGrayScale(Matrix &matrix) {
-    Matrix greyMatrix(matrix.getWidth(),matrix.getHeight());
+    Matrix greyMatrix(matrix.getWidth(), matrix.getHeight());
 
     //greyMatrix.setSize(greyMatrix.getWidth() * greyMatrix.getHeight());
 
@@ -222,47 +222,70 @@ Matrix convertToGrayScale(Matrix &matrix) {
     return greyMatrix;
 }
 
-Matrix rotateImage(Matrix &matrix, int angle){
+Matrix rotateImage(Matrix &matrix, int angle, Image &image) {
+
+    double radians = angle * M_PI / 180;
+
+    double sinA = sin(radians);
+    double cosA = cos(radians);
+
+    int centerX = matrix.getWidth()/2;
+    int centerY = matrix.getHeight()/2;
+
+    //int newWidth = ceil(abs(cosA) * matrix.getWidth() + abs(sinA) * matrix.getHeight());
+    //int newHeight = ceil(abs(cosA) * matrix.getHeight() + abs(sinA) * matrix.getWidth());
+
     Matrix matrix1(matrix.getWidth(),matrix.getHeight());
-    double rad = angle * M_PI / 180; // перевод угла из градусов в радианы
-    int new_i, new_j; // новые индексы элемента матрицы
-    double cosA = cos(rad);
-    double sinA = sin(rad);
 
-    //matrix1.setSize(512*512);
-
-    for (int i = 0; i < matrix.getHeight(); ++i) {
-        for (int j = 0; j < matrix.getWidth(); ++j) {
+    for (int i = 0; i < matrix1.getHeight(); i++) {
+        for (int j = 0; j < matrix1.getWidth(); j++) {
             RGB rgb;
             rgb.r = 0;
-            rgb.g =0;
+            rgb.g = 0;
             rgb.b = 0;
 
-            matrix1.set(i,j,rgb);
+            matrix1.set(i, j, rgb);
         }
     }
 
-    int center_x = matrix.getWidth()/2-1;
-    int center_y = matrix.getHeight()/2-1;
-    // Перебираем элементы матрицы
-    for (int i = 0; i < matrix.getHeight(); i++) {
-        for (int j = 0; j < matrix.getWidth(); j++) {
-            // Вычисляем новые индексы элемента матрицы при повороте вокруг центра
-            new_i = (i - center_x) * cosA - (j - center_y) * sinA + center_x;
-            new_j = (i - center_x) * sinA + (j - center_y) * cosA + center_y;
+    for (int y = 0; y < matrix1.getHeight(); y++) {
+        for (int x = 0; x < matrix1.getWidth(); x++) {
+            int srcX = (x - centerX) * cosA + (y - centerY) * sinA + centerX;
+            int srcY = -(x - centerX) * sinA + (y - centerY) * cosA + centerY;
 
-            // Если новые индексы выходят за границы матрицы, пропускаем элемент
-            if (new_i < 0 || new_i >= matrix.getWidth() || new_j < 0 || new_j >= matrix.getHeight()) {
-                continue;
+            if (srcX >= 0 && srcX < matrix.getWidth() && srcY >= 0 && srcY < matrix.getHeight()){
+                int x1 = floor(srcX);
+                int y1 = floor(srcY);
+                int x2 = ceil(srcX);
+                int y2 = ceil(srcY);
+                RGB q11 =  matrix.get(y1,x1);
+                RGB q12 = matrix.get(y1,x2);
+                RGB q21 = matrix.get(y2,x1);
+                RGB q22 = matrix.get(y2,x2);
+
+                // Используем билинейную интерполяцию для вычисления значения нового пикселя
+                double fx = srcX - x1;
+                double fy = srcY - y1;
+                double w1 = (1 - fx) * (1 - fy);
+                double w2 = fx * (1 - fy);
+                double w3 = (1 - fx) * fy;
+                double w4 = fx * fy;
+                RGB rgb;
+                rgb.r = round(w1 * q11.r + w2 * q12.r + w3 * q21.r + w4 * q22.r);
+                rgb.g = round(w1 * q11.g + w2 * q12.g + w3 * q21.g + w4 * q22.g);
+                rgb.b = round(w1 * q11.b + w2 * q12.b + w3 * q21.b + w4 * q22.b);
+
+                matrix1.set(y,x,rgb);
+
             }
-
-            matrix1.set(new_i,new_j,matrix.get(i,j));
         }
+
     }
 
     return matrix1;
 
 }
+
 
 int main(int argc, char *argv[]) {
     setlocale(LC_ALL, "ru");
@@ -272,9 +295,9 @@ int main(int argc, char *argv[]) {
 
     Matrix matrix = readTiff(argv[1], image, ifdArray);
 
-    Matrix matrix1 = rotateImage(matrix,45);
+    Matrix matrix1 = rotateImage(matrix, 45, image);
 
-    writeTiff(matrix1,argv[2],image,ifdArray);
+    writeTiff(matrix1, argv[2], image, ifdArray);
 
     //matrix.convertToGreyScale();
 //    if (argc == 3) {
