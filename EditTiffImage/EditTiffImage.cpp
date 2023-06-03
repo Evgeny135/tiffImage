@@ -263,7 +263,6 @@ Matrix rotateImage(Matrix &matrix, int angle, Image &image) {
                 RGB q21 = matrix.get(y2,x1);
                 RGB q22 = matrix.get(y2,x2);
 
-                // Используем билинейную интерполяцию для вычисления значения нового пикселя
                 double fx = srcX - x1;
                 double fy = srcY - y1;
                 double w1 = (1 - fx) * (1 - fy);
