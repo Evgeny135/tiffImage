@@ -310,7 +310,7 @@ Matrix scaleImage(Matrix &matrix, Image &image, double x, double y) {
                 continue;
             }
 
-            scaleMatrix.set(newX, newY, matrix.get(x, y));
+            scaleMatrix.set(newY, newX, matrix.get(y, x));
         }
     }
 
@@ -318,7 +318,7 @@ Matrix scaleImage(Matrix &matrix, Image &image, double x, double y) {
 }
 
 Matrix offsetImage(Matrix &matrix, Image &image, int x, int y) {
-    int offsetMatrix[9] = {1, 0, y, 0, 1, x, 0, 0, 1};
+    int offsetMatrix[9] = {1, 0, x, 0, 1, y, 0, 0, 1};
 
     Matrix matrixOffset(matrix.getWidth(), matrix.getHeight());
 
@@ -343,7 +343,7 @@ Matrix offsetImage(Matrix &matrix, Image &image, int x, int y) {
                 continue;
             }
 
-            matrixOffset.set(newX,newY,matrix.get(x,y));
+            matrixOffset.set(newY,newX,matrix.get(y,x));
         }
     }
 
@@ -359,7 +359,7 @@ int main(int argc, char *argv[]) {
 
     Matrix matrix = readTiff(argv[1], image, ifdArray);
 
-    Matrix matrix1 = offsetImage(matrix, image, 100, 100);
+    Matrix matrix1 = scaleImage(matrix, image,1.5,1);
 
     writeTiff(matrix1, argv[2], image, ifdArray);
 
