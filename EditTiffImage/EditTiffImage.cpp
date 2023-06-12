@@ -229,13 +229,13 @@ Matrix rotateImage(Matrix &matrix, int angle, Image &image) {
     double sinA = sin(radians);
     double cosA = cos(radians);
 
-    int centerX = matrix.getWidth()/2;
-    int centerY = matrix.getHeight()/2;
+    int centerX = matrix.getWidth() / 2;
+    int centerY = matrix.getHeight() / 2;
 
     //int newWidth = ceil(abs(cosA) * matrix.getWidth() + abs(sinA) * matrix.getHeight());
     //int newHeight = ceil(abs(cosA) * matrix.getHeight() + abs(sinA) * matrix.getWidth());
 
-    Matrix matrix1(matrix.getWidth(),matrix.getHeight());
+    Matrix matrix1(matrix.getWidth(), matrix.getHeight());
 
     for (int i = 0; i < matrix1.getHeight(); i++) {
         for (int j = 0; j < matrix1.getWidth(); j++) {
@@ -253,15 +253,15 @@ Matrix rotateImage(Matrix &matrix, int angle, Image &image) {
             int srcX = (x - centerX) * cosA + (y - centerY) * sinA + centerX;
             int srcY = -(x - centerX) * sinA + (y - centerY) * cosA + centerY;
 
-            if (srcX >= 0 && srcX < matrix.getWidth() && srcY >= 0 && srcY < matrix.getHeight()){
+            if (srcX >= 0 && srcX < matrix.getWidth() && srcY >= 0 && srcY < matrix.getHeight()) {
                 int x1 = floor(srcX);
                 int y1 = floor(srcY);
                 int x2 = ceil(srcX);
                 int y2 = ceil(srcY);
-                RGB q11 =  matrix.get(y1,x1);
-                RGB q12 = matrix.get(y1,x2);
-                RGB q21 = matrix.get(y2,x1);
-                RGB q22 = matrix.get(y2,x2);
+                RGB q11 = matrix.get(y1, x1);
+                RGB q12 = matrix.get(y1, x2);
+                RGB q21 = matrix.get(y2, x1);
+                RGB q22 = matrix.get(y2, x2);
 
                 double fx = srcX - x1;
                 double fy = srcY - y1;
@@ -274,7 +274,7 @@ Matrix rotateImage(Matrix &matrix, int angle, Image &image) {
                 rgb.g = round(w1 * q11.g + w2 * q12.g + w3 * q21.g + w4 * q22.g);
                 rgb.b = round(w1 * q11.b + w2 * q12.b + w3 * q21.b + w4 * q22.b);
 
-                matrix1.set(y,x,rgb);
+                matrix1.set(y, x, rgb);
 
             }
         }
@@ -285,6 +285,71 @@ Matrix rotateImage(Matrix &matrix, int angle, Image &image) {
 
 }
 
+Matrix scaleImage(Matrix &matrix, Image &image, double x, double y) {
+    double matrixScale[9] = {x, 0, 0, 0, y, 0, 0, 0, 1};
+    Matrix scaleMatrix(matrix.getWidth(), matrix.getHeight());
+
+    for (int i = 0; i < scaleMatrix.getHeight(); i++) {
+        for (int j = 0; j < scaleMatrix.getWidth(); j++) {
+            RGB rgb;
+            rgb.r = 0;
+            rgb.g = 0;
+            rgb.b = 0;
+
+            scaleMatrix.set(i, j, rgb);
+        }
+    }
+
+    for (int y = 0; y < matrix.getHeight(); y++) {
+        for (int x = 0; x < matrix.getWidth(); x++) {
+
+            int newX = matrixScale[0] * x + matrixScale[1] * y + matrixScale[2];
+            int newY = matrixScale[3] * x + matrixScale[4] * y + matrixScale[5];
+
+            if (newX < 0 || newX >= matrix.getWidth() || newY < 0 || newY >= matrix.getHeight()) {
+                continue;
+            }
+
+            scaleMatrix.set(newX, newY, matrix.get(x, y));
+        }
+    }
+
+    return scaleMatrix;
+}
+
+Matrix offsetImage(Matrix &matrix, Image &image, int x, int y) {
+    int offsetMatrix[9] = {1, 0, y, 0, 1, x, 0, 0, 1};
+
+    Matrix matrixOffset(matrix.getWidth(), matrix.getHeight());
+
+    for (int i = 0; i < matrixOffset.getHeight(); i++) {
+        for (int j = 0; j < matrixOffset.getWidth(); j++) {
+            RGB rgb;
+            rgb.r = 0;
+            rgb.g = 0;
+            rgb.b = 0;
+
+            matrixOffset.set(i, j, rgb);
+        }
+    }
+
+    for (int y = 0; y < matrixOffset.getHeight(); y++) {
+        for (int x = 0; x < matrixOffset.getWidth(); x++) {
+
+            int newX = offsetMatrix[0] * x + offsetMatrix[1] * y + offsetMatrix[2];
+            int newY = offsetMatrix[3] * x + offsetMatrix[4] * y + offsetMatrix[5];
+
+            if (newX < 0 || newX >= matrix.getWidth() || newY < 0 || newY >= matrix.getHeight()){
+                continue;
+            }
+
+            matrixOffset.set(newX,newY,matrix.get(x,y));
+        }
+    }
+
+    return matrixOffset;
+
+}
 
 int main(int argc, char *argv[]) {
     setlocale(LC_ALL, "ru");
@@ -294,7 +359,7 @@ int main(int argc, char *argv[]) {
 
     Matrix matrix = readTiff(argv[1], image, ifdArray);
 
-    Matrix matrix1 = rotateImage(matrix, 45, image);
+    Matrix matrix1 = offsetImage(matrix, image, 100, 100);
 
     writeTiff(matrix1, argv[2], image, ifdArray);
 
