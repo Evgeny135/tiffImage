@@ -42,7 +42,7 @@ Matrix convertToGrayScale(Matrix &matrix) {
     return greyMatrix;
 }
 
-Matrix rotateImage(Matrix &matrix, int angle, Image &image) {
+Matrix rotateImage(Matrix &matrix, int angle) {
 
     double radians = angle * M_PI / 180;
 
@@ -147,7 +147,7 @@ Matrix scaleImage(const Matrix &matrix, double x, double y) {
     return scaleMatrix;
 }
 
-Matrix offsetImage(Matrix &matrix, Image &image, int x, int y) {
+Matrix offsetImage(Matrix &matrix, int x, int y) {
     int offsetMatrix[9] = {1, 0, x, 0, 1, y, 0, 0, 1};
 
     Matrix matrixOffset(matrix.getWidth(), matrix.getHeight());
