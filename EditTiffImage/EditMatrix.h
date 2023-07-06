@@ -1,5 +1,18 @@
 #include "Matrix.h"
 
+struct Point{
+    float x;
+    float y;
+};
+
+Point getCoordinate(double* matrix, double x, double y){
+    Point point;
+    point.x = matrix[0]*x + matrix[1]*y;
+    point.y = matrix[2]*x + matrix[3]*y;
+
+    return point;
+}
+
 Matrix cropImage(struct Image &image, int width, int height, Matrix &matrix) {
 
     if (width > image.width) {
@@ -114,8 +127,10 @@ Matrix scaleImage(const Matrix &matrix, double x, double y) {
     for (int j = 0; j < matrix.getHeight(); j++) {
         for (int i = 0; i < matrix.getWidth(); i++) {
 
-            float srcX = i*matrixScale[0];
-            float srcY = j*matrixScale[3];
+            Point point = getCoordinate(matrixScale,i,j);
+
+            float srcX = point.x;
+            float srcY = point.y;
 
             if (srcX >= 0 && srcX < matrix.getWidth() && srcY >= 0 && srcY < matrix.getHeight()) {
                 int x1 = (int) srcX;
