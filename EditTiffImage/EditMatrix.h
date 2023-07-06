@@ -5,12 +5,37 @@ struct Point{
     float y;
 };
 
-Point getCoordinate(double* matrix, double x, double y){
+Point getCoordinate(const double* matrix, double x, double y){
     Point point;
     point.x = matrix[0]*x + matrix[1]*y + matrix[2];
     point.y = matrix[3]*x + matrix[4]*y + matrix[5];
 
     return point;
+}
+
+RGB interpolation(const Matrix& matrix,struct Point point){
+    int x1 = (int) point.x;
+    int y1 = (int) point.y;
+    int x2 = x1 + 1;
+    int y2 = y1 + 1;
+    float fx = point.x - x1;
+    float fy = point.y - y1;
+
+    RGB q11 = matrix.get(y1, x1);
+    RGB q12 = matrix.get(y1, x2);
+    RGB q21 = matrix.get(y2, x1);
+    RGB q22 = matrix.get(y2, x2);
+
+    double w1 = (1 - fx) * (1 - fy);
+    double w2 = fx * (1 - fy);
+    double w3 = (1 - fx) * fy;
+    double w4 = fx * fy;
+    RGB rgb;
+    rgb.r = round(w1 * q11.r + w2 * q12.r + w3 * q21.r + w4 * q22.r);
+    rgb.g = round(w1 * q11.g + w2 * q12.g + w3 * q21.g + w4 * q22.g);
+    rgb.b = round(w1 * q11.b + w2 * q12.b + w3 * q21.b + w4 * q22.b);
+
+    return rgb;
 }
 
 Matrix cropImage(struct Image &image, int width, int height, Matrix &matrix) {
@@ -75,40 +100,18 @@ Matrix rotateImage(Matrix &matrix, int angle) {
             matrix1.set(i, j, rgb);
         }
     }
+    double rotateMatrix[6]  = {cosA,sinA,static_cast<double>(centerX),-sinA,cosA,static_cast<double>(centerY)};
 
     for (int y = 0; y < matrix1.getHeight(); y++) {
         for (int x = 0; x < matrix1.getWidth(); x++) {
-            int srcX = (x - centerX) * cosA + (y - centerY) * sinA + centerX;
-            int srcY = -(x - centerX) * sinA + (y - centerY) * cosA + centerY;
+            Point point= getCoordinate(rotateMatrix,x-centerX,y-centerY);
+            if (point.x >= 0 && point.x < matrix.getWidth() && point.y >= 0 && point.y < matrix.getHeight()) {
+                RGB rgb1 = interpolation(matrix,point);
 
-            if (srcX >= 0 && srcX < matrix.getWidth() && srcY >= 0 && srcY < matrix.getHeight()) {
-                int x1 = floor(srcX);
-                int y1 = floor(srcY);
-                int x2 = ceil(srcX);
-                int y2 = ceil(srcY);
-                RGB q11 = matrix.get(y1, x1);
-                RGB q12 = matrix.get(y1, x2);
-                RGB q21 = matrix.get(y2, x1);
-                RGB q22 = matrix.get(y2, x2);
-
-                double fx = srcX - x1;
-                double fy = srcY - y1;
-                double w1 = (1 - fx) * (1 - fy);
-                double w2 = fx * (1 - fy);
-                double w3 = (1 - fx) * fy;
-                double w4 = fx * fy;
-                RGB rgb;
-                rgb.r = round(w1 * q11.r + w2 * q12.r + w3 * q21.r + w4 * q22.r);
-                rgb.g = round(w1 * q11.g + w2 * q12.g + w3 * q21.g + w4 * q22.g);
-                rgb.b = round(w1 * q11.b + w2 * q12.b + w3 * q21.b + w4 * q22.b);
-
-                matrix1.set(y, x, rgb);
-
+                matrix1.set(y, x, rgb1);
             }
         }
-
     }
-
     return matrix1;
 }
 
@@ -126,35 +129,12 @@ Matrix scaleImage(const Matrix &matrix, double x, double y) {
 
     for (int j = 0; j < matrix.getHeight(); j++) {
         for (int i = 0; i < matrix.getWidth(); i++) {
-
             Point point = getCoordinate(matrixScale,i,j);
 
-            float srcX = point.x;
-            float srcY = point.y;
+            if (point.x >= 0 && point.x < matrix.getWidth() && point.y >= 0 && point.y < matrix.getHeight()) {
+                RGB rgb1 = interpolation(matrix,point);
 
-            if (srcX >= 0 && srcX < matrix.getWidth() && srcY >= 0 && srcY < matrix.getHeight()) {
-                int x1 = (int) srcX;
-                int y1 = (int) srcY;
-                int x2 = x1 + 1;
-                int y2 = y1 + 1;
-                float fx = srcX - x1;
-                float fy = srcY - y1;
-
-                RGB q11 = matrix.get(y1, x1);
-                RGB q12 = matrix.get(y1, x2);
-                RGB q21 = matrix.get(y2, x1);
-                RGB q22 = matrix.get(y2, x2);
-
-                double w1 = (1 - fx) * (1 - fy);
-                double w2 = fx * (1 - fy);
-                double w3 = (1 - fx) * fy;
-                double w4 = fx * fy;
-                RGB rgb;
-                rgb.r = round(w1 * q11.r + w2 * q12.r + w3 * q21.r + w4 * q22.r);
-                rgb.g = round(w1 * q11.g + w2 * q12.g + w3 * q21.g + w4 * q22.g);
-                rgb.b = round(w1 * q11.b + w2 * q12.b + w3 * q21.b + w4 * q22.b);
-
-                scaleMatrix.set(j, i, rgb);
+                scaleMatrix.set(j, i, rgb1);
             }
         }
     }
@@ -177,7 +157,6 @@ Matrix offsetImage(Matrix &matrix, int x, int y) {
 
     for (int y = 0; y < matrixOffset.getHeight(); y++) {
         for (int x = 0; x < matrixOffset.getWidth(); x++) {
-
             Point point = getCoordinate(offsetMatrix, x, y);
 
             int newX = point.x;
@@ -190,7 +169,6 @@ Matrix offsetImage(Matrix &matrix, int x, int y) {
             matrixOffset.set(newY,newX,matrix.get(y,x));
         }
     }
-
     return matrixOffset;
 }
 
