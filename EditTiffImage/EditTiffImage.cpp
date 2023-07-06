@@ -16,7 +16,7 @@ int main(int argc, char *argv[]) {
 
     Matrix matrix = readTiff(argv[1], image, ifdArray);
 
-    Matrix matrix2 = scaleImage(matrix,1.75,1);
+    Matrix matrix2 = offsetImage(matrix,100,100);
 
     writeTiff(matrix2, argv[2], image, ifdArray);
 

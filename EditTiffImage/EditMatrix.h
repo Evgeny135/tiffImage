@@ -7,8 +7,8 @@ struct Point{
 
 Point getCoordinate(double* matrix, double x, double y){
     Point point;
-    point.x = matrix[0]*x + matrix[1]*y;
-    point.y = matrix[2]*x + matrix[3]*y;
+    point.x = matrix[0]*x + matrix[1]*y + matrix[2];
+    point.y = matrix[3]*x + matrix[4]*y + matrix[5];
 
     return point;
 }
@@ -114,7 +114,7 @@ Matrix rotateImage(Matrix &matrix, int angle) {
 
 
 Matrix scaleImage(const Matrix &matrix, double x, double y) {
-    double matrixScale[4] = {1/x, 0, 0, 1/y};
+    double matrixScale[9] = {1/x, 0, 0,0, 1/y,0,0,0,1};
     Matrix scaleMatrix(matrix.getWidth(), matrix.getHeight());
 
     const RGB rgb{0,0,0};
@@ -163,7 +163,7 @@ Matrix scaleImage(const Matrix &matrix, double x, double y) {
 }
 
 Matrix offsetImage(Matrix &matrix, int x, int y) {
-    int offsetMatrix[9] = {1, 0, x, 0, 1, y, 0, 0, 1};
+    double offsetMatrix[9] = {1, 0, static_cast<double>(x), 0, 1, static_cast<double>(y), 0, 0, 1};
 
     Matrix matrixOffset(matrix.getWidth(), matrix.getHeight());
 
@@ -178,8 +178,10 @@ Matrix offsetImage(Matrix &matrix, int x, int y) {
     for (int y = 0; y < matrixOffset.getHeight(); y++) {
         for (int x = 0; x < matrixOffset.getWidth(); x++) {
 
-            int newX = offsetMatrix[0] * x + offsetMatrix[1] * y + offsetMatrix[2];
-            int newY = offsetMatrix[3] * x + offsetMatrix[4] * y + offsetMatrix[5];
+            Point point = getCoordinate(offsetMatrix, x, y);
+
+            int newX = point.x;
+            int newY = point.y;
 
             if (newX < 0 || newX >= matrix.getWidth() || newY < 0 || newY >= matrix.getHeight()){
                 continue;
