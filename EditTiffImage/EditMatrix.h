@@ -171,4 +171,3 @@ Matrix offsetImage(Matrix &matrix, int x, int y) {
     }
     return matrixOffset;
 }
-
