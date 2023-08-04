@@ -6,5 +6,7 @@ set(CMAKE_CXX_STANDARD 14)
 include_directories(EditTiffImage)
 
 add_executable(tiffImage
-        EditTiffImage/EditTiffImage.cpp
-        EditTiffImage/Matrix.h EditTiffImage/OpenAndSave.h EditTiffImage/EditMatrix.h)
+        EditTiffImage.cpp
+        Matrix.h OpenAndSave.h EditMatrix.h)
+
+#add_library()

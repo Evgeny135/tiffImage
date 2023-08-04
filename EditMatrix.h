@@ -1,3 +1,4 @@
+#include "cmath"
 #include "Matrix.h"
 
 struct Point{
@@ -14,6 +15,9 @@ Point getCoordinate(const double* matrix, double x, double y){
 }
 
 RGB interpolation(const Matrix& matrix,struct Point point){
+    if (matrix.getWidth()*matrix.getHeight()==1) {
+        return matrix.get(0,0);
+    }
     int x1 = (int) point.x;
     int y1 = (int) point.y;
     int x2 = x1 + 1;
@@ -65,8 +69,6 @@ Matrix cropImage(struct Image &image, int width, int height, Matrix &matrix) {
 Matrix convertToGrayScale(Matrix &matrix) {
     Matrix greyMatrix(matrix.getWidth(), matrix.getHeight());
 
-    //greyMatrix.setSize(greyMatrix.getWidth() * greyMatrix.getHeight());
-
     for (int i = 0; i < greyMatrix.getHeight(); i++) {
         for (int j = 0; j < greyMatrix.getWidth(); j++) {
             RGB rgb = matrix.get(i, j);
@@ -92,14 +94,8 @@ Matrix rotateImage(Matrix &matrix, int angle) {
 
     Matrix matrix1(matrix.getWidth(), matrix.getHeight());
 
-    const RGB rgb{0,0,0};
+    matrix1.fill();
 
-    for (int i = 0; i < matrix1.getHeight(); i++) {
-        for (int j = 0; j < matrix1.getWidth(); j++) {
-
-            matrix1.set(i, j, rgb);
-        }
-    }
     double rotateMatrix[6]  = {cosA,sinA,static_cast<double>(centerX),-sinA,cosA,static_cast<double>(centerY)};
 
     for (int y = 0; y < matrix1.getHeight(); y++) {
@@ -120,12 +116,7 @@ Matrix scaleImage(const Matrix &matrix, double x, double y) {
     double matrixScale[9] = {1/x, 0, 0,0, 1/y,0,0,0,1};
     Matrix scaleMatrix(matrix.getWidth(), matrix.getHeight());
 
-    const RGB rgb{0,0,0};
-    for (int i = 0; i < scaleMatrix.getHeight(); i++) {
-        for (int j = 0; j < scaleMatrix.getWidth(); j++) {
-            scaleMatrix.set(i, j, rgb);
-        }
-    }
+   scaleMatrix.fill();
 
     for (int j = 0; j < matrix.getHeight(); j++) {
         for (int i = 0; i < matrix.getWidth(); i++) {
@@ -147,13 +138,7 @@ Matrix offsetImage(Matrix &matrix, int x, int y) {
 
     Matrix matrixOffset(matrix.getWidth(), matrix.getHeight());
 
-    const RGB rgb{0,0,0};
-
-    for (int i = 0; i < matrixOffset.getHeight(); i++) {
-        for (int j = 0; j < matrixOffset.getWidth(); j++) {
-            matrixOffset.set(i, j, rgb);
-        }
-    }
+    matrixOffset.fill();
 
     for (int y = 0; y < matrixOffset.getHeight(); y++) {
         for (int x = 0; x < matrixOffset.getWidth(); x++) {

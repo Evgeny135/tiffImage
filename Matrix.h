@@ -36,6 +36,17 @@ public:
 			}
 	}
 
+    void fill(){
+        const RGB rgb{0,0,0};
+
+        for (int i = 0; i < this->height; i++) {
+            for (int j = 0; j < this->width; j++) {
+
+                this->set(i, j, rgb);
+            }
+        }
+    }
+
 	void getImageDataFromMatrix(char* imageData){
 		int k = -1;
 		for (int i = 0; i < height*width; i++)

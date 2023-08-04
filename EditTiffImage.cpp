@@ -1,8 +1,5 @@
-﻿#include <iostream>
-#include <fstream>
-#include "Matrix.h"
+﻿#include "Matrix.h"
 #include <string>
-#include "cmath"
 #include "OpenAndSave.h"
 #include "EditMatrix.h"
 
@@ -19,6 +16,7 @@ int main(int argc, char *argv[]) {
     Matrix matrix2 = rotateImage(matrix,45);
 
     writeTiff(matrix2, argv[2], image, ifdArray);
+
 
     //matrix.convertToGreyScale();
 //    if (argc == 3) {
