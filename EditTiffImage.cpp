@@ -9,13 +9,12 @@ int main(int argc, char *argv[]) {
     setlocale(LC_ALL, "ru");
 
     Image image;
-    vector<IFD> ifdArray;
 
-    Matrix matrix = readTiff(argv[1], image, ifdArray);
+    Matrix matrix = readTiff(argv[1], image);
 
-    Matrix matrix2 = rotateImage(matrix,45);
+    Matrix matrix2 = cropImage(image,215,215,matrix);
 
-    writeTiff(matrix2, argv[2], image, ifdArray);
+    writeTiff(matrix2, argv[2], image);
 
 
     //matrix.convertToGreyScale();

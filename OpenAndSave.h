@@ -18,17 +18,9 @@ void parseBit(char *buffer, unsigned int number) {
     }
 }
 
-struct IFD {
-    unsigned int tagId = 256;
-    unsigned int typeTag = 1;
-    unsigned int length = 1;
-    unsigned int offset = 1;
-    unsigned int value = 1;
-};
 
 struct Image {
     unsigned int offsetIfd = 1;
-    unsigned int countIfd = 8;
     unsigned int width = 1;
     unsigned int height = 1;
     unsigned int offsetImage = 8;
@@ -36,7 +28,22 @@ struct Image {
     unsigned int offsetBitPerSamples = 1;
 };
 
-Matrix readTiff(const char *filePath, Image &image, std::vector<IFD> &ifdArray) {
+void outTag(std::ofstream &out,unsigned int id, unsigned int type, unsigned int length, unsigned int value){
+    char buffer[4];
+    parseBit(buffer, id);
+    out.write(buffer,2);
+
+    parseBit(buffer,type);
+    out.write(buffer,2);
+
+    parseBit(buffer,length);
+    out.write(buffer,4);
+
+    parseBit(buffer,value);
+    out.write(buffer,4);
+}
+
+Matrix readTiff(const char *filePath, Image &image) {
 
     std::ifstream in(filePath, std::ios::binary);
     char buffer[4];
@@ -51,54 +58,15 @@ Matrix readTiff(const char *filePath, Image &image, std::vector<IFD> &ifdArray) 
     in.seekg(image.offsetIfd);
     in.read(buffer, 2);
 
-    image.countIfd = getBit(buffer, 2);
+    in.seekg(8,std::ios::cur);
+    in.read(buffer,4);
+    image.width = getBit(buffer,4);
 
-    for (int i = 0; i < image.countIfd; i++) {
-        IFD ifd;
+    in.seekg(8,std::ios::cur);
+    in.read(buffer,4);
+    image.height = getBit(buffer,4);
 
-        in.read(buffer, 2);
-        ifd.tagId = getBit(buffer, 2);
-
-        in.read(buffer, 2);
-        ifd.typeTag = getBit(buffer, 2);
-
-        in.read(buffer, 4);
-        ifd.length = getBit(buffer, 4);
-
-        in.read(buffer, 4);
-        ifd.offset = getBit(buffer, 4);
-
-        ifd.value = ifd.offset;
-
-        if (ifd.tagId == 256) {
-            image.width = ifd.value;
-        }
-        if (ifd.tagId == 257) {
-            image.height = ifd.value;
-        }
-        if (ifd.tagId == 258) {
-            ifd.value = 8;
-        }
-        if (ifd.tagId == 279) {
-            image.dataImageCount = image.width * image.height * 3;
-            ifd.value = image.dataImageCount;
-        }
-        if (ifd.tagId == 273) {
-            image.offsetImage = 8;
-            ifd.value = image.offsetImage;
-            ifd.offset = image.offsetImage;
-            ifd.length = 1;
-        }
-        if (ifd.tagId == 278) {
-            ifd.value = image.height;
-        }
-        if (ifd.tagId == 279) {
-            ifd.value = image.dataImageCount;
-            ifd.length = 1;
-        }
-        ifdArray.push_back(ifd);
-    }
-
+    image.dataImageCount = image.height*image.width*3;
     image.offsetBitPerSamples = (8 + image.dataImageCount + 9 * 12) + 12;
     image.offsetIfd = image.height * image.width * 3 + 8;
 
@@ -114,10 +82,9 @@ Matrix readTiff(const char *filePath, Image &image, std::vector<IFD> &ifdArray) 
     matrix.setPixel(imageData);
 
     return matrix;
-
 }
 
-void writeTiff(Matrix &matrix, const char *filePath, struct Image image, std::vector<IFD> &ifdArray) {
+void writeTiff(Matrix &matrix, const char *filePath, struct Image image) {
     std::ofstream out(filePath, std::ios::binary);
     char buffer[4];
     char *imageData = new char[image.dataImageCount];
@@ -134,32 +101,15 @@ void writeTiff(Matrix &matrix, const char *filePath, struct Image image, std::ve
 
     parseBit(buffer, 8);
     out.write(buffer, 2);
-    for (int i = 0; i < image.countIfd; i++) {
-        if (ifdArray[i].tagId == 256 || ifdArray[i].tagId == 257 || ifdArray[i].tagId == 258 || ifdArray[i].tagId == 259
-            || ifdArray[i].tagId == 262 || ifdArray[i].tagId == 273 || ifdArray[i].tagId == 277 ||
-            ifdArray[i].tagId == 279) {
-            parseBit(buffer, ifdArray[i].tagId);
-            out.write(buffer, 2);
-            parseBit(buffer, ifdArray[i].typeTag);
-            out.write(buffer, 2);
-            parseBit(buffer, ifdArray[i].length);
-            out.write(buffer, 4);
-            if (ifdArray[i].tagId == 258) {
-                parseBit(buffer, image.offsetBitPerSamples);
-                out.write(buffer, 4);
-            } else if (ifdArray[i].tagId == 256) {
-                parseBit(buffer, image.width);
-                out.write(buffer, 4);
-            } else if (ifdArray[i].tagId == 257) {
-                parseBit(buffer, image.height);
-                out.write(buffer, 4);
-            } else {
-                parseBit(buffer, ifdArray[i].value);
-                out.write(buffer, 4);
-            }
-        }
 
-    }
+    outTag(out,256,3,1,image.width); // Ширина
+    outTag(out,257,3,1,image.height); // Высота
+    outTag(out,258,3,3,image.offsetBitPerSamples); // бит на пиксель
+    outTag(out,259,3,1,1); // сжатие
+    outTag(out,262,3,1,2);
+    outTag(out,273,4,1,8);
+    outTag(out,277,3,1,3);
+    outTag(out,279,4,1,image.dataImageCount);
 
     out.seekp(image.offsetBitPerSamples);
     parseBit(buffer, 8);
