@@ -2,19 +2,69 @@
 #include <string>
 #include "OpenAndSave.h"
 #include "EditMatrix.h"
-
-using namespace std;
+#include "boost/program_options.hpp"
 
 int main(int argc, char *argv[]) {
     setlocale(LC_ALL, "ru");
 
     Image image;
 
-    Matrix matrix = readTiff(argv[1], image);
+    Matrix matrix;
 
-    Matrix matrix2 = cropImage(image,215,215,matrix);
+    Matrix current;
 
-    writeTiff(matrix2, argv[2], image);
+    std::string filename;
+    std::string outFile;
+
+    boost::program_options::options_description desc("Options");
+    boost::program_options::positional_options_description pos_desc;
+
+    pos_desc.add("-input", 1);
+    pos_desc.add("-output", 1);
+
+    desc.add_options()
+            ("input",boost::program_options::value<std::string>(),"input image")
+            ("output",boost::program_options::value<std::string>(),"output image")
+            ("-crop",boost::program_options::value<std::vector<std::string>>()->multitoken(),"crop image")
+            ("-gs","convert image to grayscale");
+//            ("-rotate",boost::program_options::value<int>(),"rotate image");
+//            ("-scale",boost::program_options::value<std::vector<double>>()->multitoken(),"scale image")
+//            ("-offset",boost::program_options::value<std::vector<int>>()->multitoken(),"offset image");
+
+
+    boost::program_options::variables_map vm;
+    boost::program_options::store(boost::program_options::command_line_parser(argc, argv).options(desc).positional(pos_desc).run(), vm);
+    boost::program_options::notify(vm);
+
+    if (vm.count("input")){
+        filename = vm["input"].as<std::string>();
+    }
+    if (vm.count("output")){
+        outFile = vm["output"].as<std::string>();
+    }
+
+    matrix = readTiff(filename.data(), image);
+    current = matrix;
+
+    if (vm.count("-crop")){
+        std::vector<std::string> data = vm["-crop"].as<std::vector<std::string>>();
+        current = cropImage(image,std::stoi(data[1]),std::stoi(data[2]),current);
+    }
+    if (vm.count("-gs")){
+        current = convertToGrayScale(current);
+    }
+    if (vm.count("-rotate")){
+        current = rotateImage(current,vm["-rotate"].as<int>());
+    }
+//    if (vm.count("-scale")){
+//
+//    }
+//    if(vm.count("-offset")){
+//
+//    }
+
+    writeTiff(current,outFile.data(),image);
+
 
 
     //matrix.convertToGreyScale();
