@@ -3,8 +3,8 @@ project(tiffImage)
 
 set(CMAKE_CXX_STANDARD 14)
 
-set(BOOST_ROOT "C:/boost")
-set(BOOST_INCLUDEDIR "C:/boost/include/boost-1_83/")
+set(BOOST_ROOT $ENV{BOOST_ROOT})
+set(BOOST_INCLUDEDIR $ENV{BOOST_INCLUDEDIR})
 
 FIND_PACKAGE(Boost 1.83 COMPONENTS program_options REQUIRED)
 

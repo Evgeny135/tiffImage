@@ -20,8 +20,8 @@ int main(int argc, char *argv[]) {
     pos_desc.add("output", 1);
 
     desc.add_options()
-            ("input",boost::program_options::value<std::string>(),"input image")
-            ("output",boost::program_options::value<std::string>(),"output image")
+            ("input",boost::program_options::value<std::string>()->required(),"input image")
+            ("output",boost::program_options::value<std::string>()->required(),"output image")
             ("crop",boost::program_options::value<std::vector<int>>()->multitoken(),"crop image")
             ("gs","convert image to grayscale")
             ("rotate",boost::program_options::value<int>(),"rotate image")
@@ -33,12 +33,8 @@ int main(int argc, char *argv[]) {
     boost::program_options::store(boost::program_options::command_line_parser(argc, argv).options(desc).positional(pos_desc).run(), vm);
     boost::program_options::notify(vm);
 
-    if (vm.count("input")){
-        filename = vm["input"].as<std::string>();
-    }
-    if (vm.count("output")){
-        outFile = vm["output"].as<std::string>();
-    }
+    filename = vm["input"].as<std::string>();
+    outFile = vm["output"].as<std::string>();
 
     current = readTiff(filename.data(), image);
 

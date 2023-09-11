@@ -1,5 +1,6 @@
 #include "cmath"
 #include "Matrix.h"
+#include "algorithm"
 
 struct Point{
     float x;
@@ -13,6 +14,7 @@ Point getCoordinate(const double* matrix, double x, double y){
 
     return point;
 }
+
 
 RGB interpolation(const Matrix& matrix,struct Point point){
     if (matrix.getWidth()*matrix.getHeight()==1) {
@@ -42,14 +44,31 @@ RGB interpolation(const Matrix& matrix,struct Point point){
     return rgb;
 }
 
-Matrix cropImage(struct Image &image, int width, int height, Matrix &matrix) {
+Matrix transformMatrix(const double* transofrmMatrix,const Matrix& matrix, int centerX, int centerY){
+    Matrix matrix1(matrix.getWidth(), matrix.getHeight());
 
-    if (width > image.width) {
-        width = image.width;
+    matrix1.fill();
+
+    for (int y = 0; y < matrix1.getHeight(); y++) {
+        for (int x = 0; x < matrix1.getWidth(); x++) {
+            Point point= getCoordinate(transofrmMatrix,x-centerX,y-centerY);
+            if (point.x >= 0 && point.x < matrix1.getWidth() && point.y >= 0 && point.y < matrix1.getHeight()) {
+                RGB rgb1 = interpolation(matrix,point);
+
+                matrix1.set(y, x, rgb1);
+            }
+        }
     }
-    if (height > image.height) {
-        height = image.height;
-    }
+
+    return matrix1;
+}
+
+Matrix cropImage(struct Image &image, unsigned int width, unsigned int height, Matrix &matrix) {
+
+    width = std::min(width,image.width);
+
+    height= std::min(height,image.height);
+
     Matrix cropMatrix(width, height);
 
     image.width = width;
@@ -92,45 +111,16 @@ Matrix rotateImage(Matrix &matrix, int angle) {
     int centerX = matrix.getWidth() / 2;
     int centerY = matrix.getHeight() / 2;
 
-    Matrix matrix1(matrix.getWidth(), matrix.getHeight());
-
-    matrix1.fill();
-
     double rotateMatrix[6]  = {cosA,sinA,static_cast<double>(centerX),-sinA,cosA,static_cast<double>(centerY)};
 
-    for (int y = 0; y < matrix1.getHeight(); y++) {
-        for (int x = 0; x < matrix1.getWidth(); x++) {
-            Point point= getCoordinate(rotateMatrix,x-centerX,y-centerY);
-            if (point.x >= 0 && point.x < matrix.getWidth() && point.y >= 0 && point.y < matrix.getHeight()) {
-                RGB rgb1 = interpolation(matrix,point);
-
-                matrix1.set(y, x, rgb1);
-            }
-        }
-    }
-    return matrix1;
+    return transformMatrix(rotateMatrix, matrix, centerX, centerY);
 }
 
 
 Matrix scaleImage(const Matrix &matrix, double x, double y) {
     double matrixScale[9] = {1/x, 0, 0,0, 1/y,0,0,0,1};
-    Matrix scaleMatrix(matrix.getWidth(), matrix.getHeight());
 
-   scaleMatrix.fill();
-
-    for (int j = 0; j < matrix.getHeight(); j++) {
-        for (int i = 0; i < matrix.getWidth(); i++) {
-            Point point = getCoordinate(matrixScale,i,j);
-
-            if (point.x >= 0 && point.x < matrix.getWidth() && point.y >= 0 && point.y < matrix.getHeight()) {
-                RGB rgb1 = interpolation(matrix,point);
-
-                scaleMatrix.set(j, i, rgb1);
-            }
-        }
-    }
-
-    return scaleMatrix;
+    return transformMatrix(matrixScale,matrix,0,0);
 }
 
 Matrix offsetImage(Matrix &matrix, int x, int y) {
