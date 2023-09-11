@@ -8,7 +8,7 @@ int main(int argc, char *argv[]) {
     setlocale(LC_ALL, "ru");
 
     Image image;
-    Matrix current;
+    Matrix<RGB> current;
 
     std::string filename;
     std::string outFile;
