@@ -15,6 +15,7 @@ Point getCoordinate(const double* matrix, double x, double y){
     return point;
 }
 
+//test
 
 RGB interpolation(const Matrix& matrix,struct Point point){
     if (matrix.getWidth()*matrix.getHeight()==1) {
