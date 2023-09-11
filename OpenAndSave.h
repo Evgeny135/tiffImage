@@ -3,6 +3,12 @@
 #include <fstream>
 #include "vector"
 
+struct RGB {
+    uint8_t r;
+    uint8_t g;
+    uint8_t b;
+};
+
 unsigned int getBit(char *buffer, int length = 4) {
     unsigned int size = 0;
 
@@ -43,14 +49,14 @@ void outTag(std::ofstream &out,unsigned int id, unsigned int type, unsigned int 
     out.write(buffer,4);
 }
 
-Matrix readTiff(const char *filePath, Image &image) {
+Matrix<RGB> readTiff(const char *filePath, Image &image) {
 
     std::ifstream in(filePath, std::ios::binary);
     char buffer[4];
 
     in.seekg(4);
 
-    Matrix matrix;
+    Matrix<RGB> matrix;
 
     in.read(buffer, 4);
     image.offsetIfd = getBit(buffer);
@@ -79,12 +85,20 @@ Matrix readTiff(const char *filePath, Image &image) {
     in.read(imageData, image.dataImageCount);
     getBit(imageData, image.dataImageCount);
 
-    matrix.setPixel(imageData);
+    int k = -1;
+    for (int i = 0; i< image.width*image.height; i++){
+        RGB rgb;
+        rgb.r = imageData[++k];
+        rgb.g = imageData[++k];
+        rgb.b = imageData[++k];
+        matrix.addElement(rgb);
+    }
+
 
     return matrix;
 }
 
-void writeTiff(Matrix &matrix, const char *filePath, struct Image image) {
+void writeTiff(Matrix<RGB> &matrix, const char *filePath, struct Image image) {
     std::ofstream out(filePath, std::ios::binary);
     char buffer[4];
     char *imageData = new char[image.dataImageCount];
@@ -95,7 +109,13 @@ void writeTiff(Matrix &matrix, const char *filePath, struct Image image) {
     parseBit(buffer, image.offsetIfd);
     out.write(buffer, 4);
 
-    matrix.getImageDataFromMatrix(imageData);
+    int k = -1;
+		for (int i = 0; i < image.height*image.width; i++)
+		{
+				imageData[++k] = matrix.getElementByIndex(i).r;
+				imageData[++k] = matrix.getElementByIndex(i).g;
+				imageData[++k] = matrix.getElementByIndex(i).b;
+		}
 
     out.write(imageData, image.dataImageCount);
 

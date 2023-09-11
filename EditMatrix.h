@@ -7,6 +7,7 @@ struct Point{
     float y;
 };
 
+
 Point getCoordinate(const double* matrix, double x, double y){
     Point point;
     point.x = matrix[0]*x + matrix[1]*y + matrix[2];
@@ -15,9 +16,17 @@ Point getCoordinate(const double* matrix, double x, double y){
     return point;
 }
 
-//test
+void fillMatrix(Matrix<RGB>& matrix){
+    RGB rgb {0,0,0};
+    for (int i = 0; i < matrix.getHeight(); i++) {
+            for (int j = 0; j < matrix.getWidth(); j++) {
 
-RGB interpolation(const Matrix& matrix,struct Point point){
+                matrix.set(i, j, rgb);
+            }
+        }
+}
+
+RGB interpolation(const Matrix<RGB>& matrix,struct Point point){
     if (matrix.getWidth()*matrix.getHeight()==1) {
         return matrix.get(0,0);
     }
@@ -45,10 +54,10 @@ RGB interpolation(const Matrix& matrix,struct Point point){
     return rgb;
 }
 
-Matrix transformMatrix(const double* transofrmMatrix,const Matrix& matrix, int centerX, int centerY){
-    Matrix matrix1(matrix.getWidth(), matrix.getHeight());
+Matrix<RGB> transformMatrix(const double* transofrmMatrix,const Matrix<RGB>& matrix, int centerX, int centerY){
+    Matrix<RGB> matrix1(matrix.getWidth(), matrix.getHeight());
 
-    matrix1.fill();
+    fillMatrix(matrix1);
 
     for (int y = 0; y < matrix1.getHeight(); y++) {
         for (int x = 0; x < matrix1.getWidth(); x++) {
@@ -64,13 +73,13 @@ Matrix transformMatrix(const double* transofrmMatrix,const Matrix& matrix, int c
     return matrix1;
 }
 
-Matrix cropImage(struct Image &image, unsigned int width, unsigned int height, Matrix &matrix) {
+Matrix<RGB> cropImage(struct Image &image, unsigned int width, unsigned int height, Matrix<RGB> &matrix) {
 
     width = std::min(width,image.width);
 
     height= std::min(height,image.height);
 
-    Matrix cropMatrix(width, height);
+    Matrix<RGB> cropMatrix(width, height);
 
     image.width = width;
     image.height = height;
@@ -86,8 +95,8 @@ Matrix cropImage(struct Image &image, unsigned int width, unsigned int height, M
     return cropMatrix;
 }
 
-Matrix convertToGrayScale(Matrix &matrix) {
-    Matrix greyMatrix(matrix.getWidth(), matrix.getHeight());
+Matrix<RGB> convertToGrayScale(Matrix<RGB> &matrix) {
+    Matrix<RGB> greyMatrix(matrix.getWidth(), matrix.getHeight());
 
     for (int i = 0; i < greyMatrix.getHeight(); i++) {
         for (int j = 0; j < greyMatrix.getWidth(); j++) {
@@ -102,7 +111,7 @@ Matrix convertToGrayScale(Matrix &matrix) {
     return greyMatrix;
 }
 
-Matrix rotateImage(Matrix &matrix, int angle) {
+Matrix<RGB> rotateImage(Matrix<RGB> &matrix, int angle) {
 
     double radians = angle * M_PI / 180;
 
@@ -118,18 +127,18 @@ Matrix rotateImage(Matrix &matrix, int angle) {
 }
 
 
-Matrix scaleImage(const Matrix &matrix, double x, double y) {
+Matrix<RGB> scaleImage(const Matrix<RGB> &matrix, double x, double y) {
     double matrixScale[9] = {1/x, 0, 0,0, 1/y,0,0,0,1};
 
     return transformMatrix(matrixScale,matrix,0,0);
 }
 
-Matrix offsetImage(Matrix &matrix, int x, int y) {
+Matrix<RGB> offsetImage(Matrix<RGB> &matrix, int x, int y) {
     double offsetMatrix[9] = {1, 0, static_cast<double>(x), 0, 1, static_cast<double>(y), 0, 0, 1};
 
-    Matrix matrixOffset(matrix.getWidth(), matrix.getHeight());
+    Matrix<RGB> matrixOffset(matrix.getWidth(), matrix.getHeight());
 
-    matrixOffset.fill();
+    fillMatrix(matrixOffset);
 
     for (int y = 0; y < matrixOffset.getHeight(); y++) {
         for (int x = 0; x < matrixOffset.getWidth(); x++) {
