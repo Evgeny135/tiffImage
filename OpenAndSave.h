@@ -56,7 +56,6 @@ Matrix<RGB> readTiff(const char *filePath, Image &image) {
 
     in.seekg(4);
 
-    Matrix<RGB> matrix;
 
     in.read(buffer, 4);
     image.offsetIfd = getBit(buffer);
@@ -76,8 +75,7 @@ Matrix<RGB> readTiff(const char *filePath, Image &image) {
     image.offsetBitPerSamples = (8 + image.dataImageCount + 9 * 12) + 12;
     image.offsetIfd = image.height * image.width * 3 + 8;
 
-    matrix.setWidth(image.width);
-    matrix.setHeight(image.height);
+    Matrix<RGB> matrix(image.width,image.height);
 
     char *imageData = new char[image.dataImageCount];
 
@@ -86,15 +84,15 @@ Matrix<RGB> readTiff(const char *filePath, Image &image) {
     getBit(imageData, image.dataImageCount);
 
     int k = -1;
-    for (int i = 0; i< image.width*image.height; i++){
-        RGB rgb;
-        rgb.r = imageData[++k];
-        rgb.g = imageData[++k];
-        rgb.b = imageData[++k];
-        matrix.addElement(rgb);
+    for (int i = 0; i < image.height; i++) {
+        for (int j = 0; j < image.width; j++) {
+            RGB rgb;
+            rgb.r=imageData[++k];
+            rgb.g=imageData[++k];
+            rgb.b=imageData[++k];
+            matrix.set(i,j,rgb);
+        }
     }
-
-
     return matrix;
 }
 
@@ -110,12 +108,14 @@ void writeTiff(Matrix<RGB> &matrix, const char *filePath, struct Image image) {
     out.write(buffer, 4);
 
     int k = -1;
-		for (int i = 0; i < image.height*image.width; i++)
-		{
-				imageData[++k] = matrix.getElementByIndex(i).r;
-				imageData[++k] = matrix.getElementByIndex(i).g;
-				imageData[++k] = matrix.getElementByIndex(i).b;
-		}
+    for (int i = 0; i < matrix.getHeight(); i++) {
+        for (int j = 0; j < matrix.getWidth(); j++) {
+                RGB el = matrix.get(i, j);
+				imageData[++k] = el.r;
+				imageData[++k] = el.g;
+				imageData[++k] = el.b;
+        }
+    }
 
     out.write(imageData, image.dataImageCount);
 

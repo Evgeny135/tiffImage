@@ -30,10 +30,10 @@ RGB interpolation(const Matrix<RGB>& matrix,struct Point point){
     if (matrix.getWidth()*matrix.getHeight()==1) {
         return matrix.get(0,0);
     }
-    int x1 = (int) point.x;
-    int y1 = (int) point.y;
-    int x2 = x1 + 1;
-    int y2 = y1 + 1;
+    int x1 = static_cast<int>(point.x);
+    int y1 = static_cast<int>(point.y);
+    int x2 = std::min(x1 + 1, matrix.getWidth() - 1);
+    int y2 = std::min(y1 + 1, matrix.getHeight() - 1);
     float fx = point.x - x1;
     float fy = point.y - y1;
 
