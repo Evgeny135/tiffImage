@@ -5,13 +5,14 @@ set(CMAKE_CXX_STANDARD 14)
 
 set(BOOST_ROOT $ENV{BOOST_ROOT})
 set(BOOST_INCLUDEDIR $ENV{BOOST_INCLUDEDIR})
-
 FIND_PACKAGE(Boost 1.83 COMPONENTS program_options REQUIRED)
+FIND_PACKAGE(OpenCV REQUIRED)
+include_directories( ${OpenCV_INCLUDE_DIRS} )
 
 add_executable(tiffImage
         EditTiffImage.cpp
-        Matrix.h OpenAndSave.h EditMatrix.h)
-
+        Matrix.h OpenAndSave.h EditMatrix.h RestoreParam.h)
+target_link_libraries( ${PROJECT_NAME} ${OpenCV_LIBS})
 if(Boost_FOUND)
     target_include_directories(${PROJECT_NAME} PUBLIC ${Boost_INCLUDE_DIR})
     target_link_libraries(${PROJECT_NAME} ${Boost_LIBRARIES})

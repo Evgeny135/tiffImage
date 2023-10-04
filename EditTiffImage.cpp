@@ -2,6 +2,7 @@
 #include <string>
 #include "OpenAndSave.h"
 #include "EditMatrix.h"
+#include "RestoreParam.h"
 #include "boost/program_options.hpp"
 
 int main(int argc, char *argv[]) {
@@ -38,6 +39,7 @@ int main(int argc, char *argv[]) {
 
     current = readTiff(filename.data(), image);
 
+    getKeyPoint(current);
     if (vm.count("crop")){
         std::vector<int> data = vm["crop"].as<std::vector<int>>();
         current = cropImage(image,data[0],data[1],current);
@@ -58,6 +60,8 @@ int main(int argc, char *argv[]) {
         std::vector<int> offsetData = vm["offset"].as<std::vector<int>>();
         current = offsetImage(current,offsetData[0],offsetData[1]);
     }
+
+    getKeyPoint(current);
 
     writeTiff(current,outFile.data(),image);
 }
