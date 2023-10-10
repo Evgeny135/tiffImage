@@ -6,9 +6,10 @@
 #include "boost/program_options.hpp"
 
 int main(int argc, char *argv[]) {
-    setlocale(LC_ALL, "ru");
+    system("chcp 65001");
 
     Image image;
+    Matrix<RGB> start;
     Matrix<RGB> current;
 
     std::string filename;
@@ -37,9 +38,10 @@ int main(int argc, char *argv[]) {
     filename = vm["input"].as<std::string>();
     outFile = vm["output"].as<std::string>();
 
-    current = readTiff(filename.data(), image);
+    start = readTiff(filename.data(), image);
 
-    getKeyPoint(current);
+    current = start;
+
     if (vm.count("crop")){
         std::vector<int> data = vm["crop"].as<std::vector<int>>();
         current = cropImage(image,data[0],data[1],current);
@@ -61,7 +63,8 @@ int main(int argc, char *argv[]) {
         current = offsetImage(current,offsetData[0],offsetData[1]);
     }
 
-    getKeyPoint(current);
+    getKeyPoint(start,current);
 
     writeTiff(current,outFile.data(),image);
+
 }

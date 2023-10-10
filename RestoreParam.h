@@ -14,34 +14,70 @@ cv::Mat fillMat(Matrix<RGB>& matrix){
     return mat;
 }
 
-void getKeyPoint(Matrix<RGB>& matrix){
+void getKeyPoint(Matrix<RGB>& startMatrix, Matrix<RGB>& rotateMatrix){
 
-    cv::Mat rgbMat = fillMat(matrix);
-    cv::Mat grayImage;
-    cv::cvtColor(rgbMat, grayImage, cv::COLOR_BGR2GRAY);
+    cv::Mat startMat = fillMat(startMatrix);
+    cv::Mat rotateMat = fillMat(rotateMatrix);
+
+    cv::Mat startGrayMat;
+    cv::Mat rotateGrayMat;
+
+    cv::cvtColor(startMat, startGrayMat, cv::COLOR_BGR2GRAY);
+    cv::cvtColor(rotateMat, rotateGrayMat, cv::COLOR_BGR2GRAY);
 
     cv::Ptr<cv::xfeatures2d::SURF> detector = cv::xfeatures2d::SURF::create();
+    cv::Ptr<cv::xfeatures2d::SURF> extractor = cv::xfeatures2d::SURF::create();
 
-    std::vector<cv::KeyPoint> keypoints;
-    detector->detect(grayImage, keypoints);
+    std::vector<cv::KeyPoint> keypointsStart;
+    std::vector<cv::KeyPoint> keypointsRotate;
+
+    cv::Mat descriptorsStart;
+    cv::Mat descriptorsRotate;
+
+    detector->detectAndCompute(startGrayMat,cv::Mat(), keypointsStart,descriptorsStart);
+    detector->detectAndCompute(rotateGrayMat,cv::Mat(), keypointsRotate,descriptorsRotate);
+
+    cv::Ptr<cv::DescriptorMatcher> matcher = cv::DescriptorMatcher::create(cv::DescriptorMatcher::FLANNBASED);
+    std::vector<cv::DMatch> matches;
+
+    matcher->match(descriptorsStart,descriptorsRotate,matches);
 
     for (int i = 0; i < 3; i++)
     {
-        std::cout << "Point " << i + 1 << ": " << keypoints[i].pt << std::endl;
+        cv::Point2f sourcePoint = keypointsStart[matches[i].queryIdx].pt;
+        cv::Point2f rotatedPoint = keypointsRotate[matches[i].trainIdx].pt;
+
+        std::cout << "Исходные координаты: " << sourcePoint << ", Повернуто-сдвинутые координаты: " << rotatedPoint << std::endl;
     }
 
+
     for (int i = 0; i < 3; i++)
     {
-        cv::KeyPoint keypoint = keypoints[i];
+        cv::KeyPoint keypoint = keypointsStart[matches[i].queryIdx];
         cv::Point center(keypoint.pt.x, keypoint.pt.y);
         int radius = cvRound(keypoint.size * 1.2 / 9.0);
-        cv::Scalar color(0, 0, 255);
-        int thickness = 1;
+        cv::Scalar color(0, 255, 0);
+        int thickness = 2;
         int lineType = cv::LINE_8;
 
-        circle(rgbMat, center, radius, color, thickness, lineType);
+        circle(startGrayMat, center, radius, color, thickness, lineType);
     }
 
-    cv::imshow("Wn",rgbMat);
+    cv::imshow("Wn",startGrayMat);
+    cv::waitKey(0);
+
+    for (int i = 0; i < 3; i++)
+    {
+        cv::KeyPoint keypoint = keypointsRotate[matches[i].trainIdx];
+        cv::Point center(keypoint.pt.x, keypoint.pt.y);
+        int radius = cvRound(keypoint.size * 1.2 / 9.0);
+        cv::Scalar color(0, 255, 0);
+        int thickness = 2;
+        int lineType = cv::LINE_8;
+
+        circle(rotateGrayMat, center, radius, color, thickness, lineType);
+    }
+
+    cv::imshow("Wn",rotateGrayMat);
     cv::waitKey(0);
 }
