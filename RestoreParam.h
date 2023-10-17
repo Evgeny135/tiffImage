@@ -42,42 +42,19 @@ void getKeyPoint(Matrix<RGB>& startMatrix, Matrix<RGB>& rotateMatrix){
 
     matcher->match(descriptorsStart,descriptorsRotate,matches);
 
-    for (int i = 0; i < 3; i++)
-    {
-        cv::Point2f sourcePoint = keypointsStart[matches[i].queryIdx].pt;
-        cv::Point2f rotatedPoint = keypointsRotate[matches[i].trainIdx].pt;
+    std::vector<cv::Point2f> srcPoints;
+    std::vector<cv::Point2f> rotatedPoints;
 
-        std::cout << "Исходные координаты: " << sourcePoint << ", Повернуто-сдвинутые координаты: " << rotatedPoint << std::endl;
+    for (int i = 0; i < matches.size(); i++)
+    {
+        srcPoints.push_back(keypointsStart[matches[i].queryIdx].pt);
+        rotatedPoints.push_back(keypointsRotate[matches[i].trainIdx].pt);
     }
 
+    cv::Mat homographyMatrix = cv::findHomography(srcPoints, rotatedPoints, cv::RANSAC);
 
-    for (int i = 0; i < 3; i++)
-    {
-        cv::KeyPoint keypoint = keypointsStart[matches[i].queryIdx];
-        cv::Point center(keypoint.pt.x, keypoint.pt.y);
-        int radius = cvRound(keypoint.size * 1.2 / 9.0);
-        cv::Scalar color(0, 255, 0);
-        int thickness = 2;
-        int lineType = cv::LINE_8;
+    double angle = atan2(homographyMatrix.at<double>(1, 0), homographyMatrix.at<double>(0, 0)) * 180.0 / CV_PI;
+    cv::Point2f shift(homographyMatrix.at<double>(0, 2), homographyMatrix.at<double>(1, 2));
 
-        circle(startGrayMat, center, radius, color, thickness, lineType);
-    }
-
-    cv::imshow("Wn",startGrayMat);
-    cv::waitKey(0);
-
-    for (int i = 0; i < 3; i++)
-    {
-        cv::KeyPoint keypoint = keypointsRotate[matches[i].trainIdx];
-        cv::Point center(keypoint.pt.x, keypoint.pt.y);
-        int radius = cvRound(keypoint.size * 1.2 / 9.0);
-        cv::Scalar color(0, 255, 0);
-        int thickness = 2;
-        int lineType = cv::LINE_8;
-
-        circle(rotateGrayMat, center, radius, color, thickness, lineType);
-    }
-
-    cv::imshow("Wn",rotateGrayMat);
-    cv::waitKey(0);
+    std::cout<< "Угол поворота: "<< angle << " Смещение x y: "<<shift.x<< " "<< shift.y<<std::endl;
 }
